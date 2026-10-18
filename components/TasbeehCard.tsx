@@ -1,61 +1,45 @@
 'use client';
-import React from 'react';
-import { TasbeehItem } from '@/types/tasbeeh';
-import { Trash2, ChevronRight, Hash, Play } from 'lucide-react';
+
+import { Check, ArrowUpRight, Target, Trash2 } from 'lucide-react';
+import type { MouseEvent } from 'react';
+import type { TasbeehItem } from '@/types/tasbeeh';
 
 interface TasbeehCardProps {
   item: TasbeehItem;
   onSelect: (id: string) => void;
-  onDeleteRequest: (item: TasbeehItem, e: React.MouseEvent) => void;
+  onDeleteRequest: (item: TasbeehItem, event: MouseEvent<HTMLButtonElement>) => void;
 }
 
 export default function TasbeehCard({ item, onSelect, onDeleteRequest }: TasbeehCardProps) {
+  const goal = Math.max(1, item.goal ?? 100);
+  const count = Math.max(0, item.count);
+  const progress = Math.min((count / goal) * 100, 100);
+  const complete = count >= goal;
+
   return (
-    <div
-      onClick={() => onSelect(item.id)}
-      className="group relative bg-gradient-to-b from-slate-900/90 to-slate-900/40 hover:from-slate-900 hover:to-slate-800/80 border border-emerald-500/20 hover:border-emerald-400/50 rounded-3xl p-6 transition-all duration-300 cursor-pointer shadow-xl hover:shadow-2xl hover:shadow-emerald-950/50 flex flex-col justify-between hover:-translate-y-1.5 overflow-hidden"
-    >
-      {/* Background Subtle Accent */}
-      <div className="absolute top-0 right-0 w-32 h-32 bg-emerald-500/5 rounded-full blur-2xl group-hover:bg-emerald-500/10 transition-all duration-500 pointer-events-none" />
-
-      <div>
-        {/* Header inside Card */}
-        <div className="flex items-start justify-between mb-4">
-          <span className="flex items-center gap-1.5 px-3 py-1 rounded-full bg-emerald-500/10 text-emerald-400 text-xs font-semibold tracking-wider border border-emerald-500/20">
-            <Hash size={12} />
-            Folder
-          </span>
-          <button
-            onClick={(e) => onDeleteRequest(item, e)}
-            className="text-slate-500 hover:text-rose-400 transition p-2 rounded-xl hover:bg-rose-500/10 border border-transparent hover:border-rose-500/20"
-            title="Delete Tasbeeh"
-          >
-            <Trash2 size={16} />
-          </button>
-        </div>
-
-        {/* Title */}
-        <h2 className="text-xl font-bold text-emerald-50 group-hover:text-emerald-300 transition line-clamp-2 leading-snug">
-          {item.title}
-        </h2>
+    <article className="group rounded-3xl border border-stone-200 bg-white p-5 shadow-[0_12px_40px_-28px_rgba(46,70,54,.28)] transition duration-200 hover:-translate-y-1 hover:border-emerald-300 hover:shadow-lg sm:p-6">
+      <header className="flex items-center justify-between gap-3">
+        <span className="inline-flex items-center gap-2 rounded-full bg-emerald-50 px-3 py-1.5 text-xs font-semibold text-emerald-800">
+          <span aria-hidden="true" className="h-1.5 w-1.5 rounded-full bg-emerald-600" /> Recitation
+        </span>
+        <button type="button" onClick={(event) => onDeleteRequest(item, event)} className="rounded-xl p-2 text-stone-400 transition hover:bg-rose-50 hover:text-rose-700 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-rose-700" title="Delete recitation" aria-label={`Delete ${item.title}`}>
+          <Trash2 size={17} aria-hidden="true" />
+        </button>
+      </header>
+      <h2 className="mt-5 break-words text-xl font-semibold tracking-tight text-stone-900">{item.title}</h2>
+      <div className="mt-6 flex items-end justify-between gap-3">
+        <div><p className="text-xs font-medium text-stone-500">Your progress</p><p className="mt-1 text-3xl font-semibold tabular-nums text-stone-900">{count.toLocaleString()}<span className="ml-1 text-base font-normal text-stone-400">/ {goal.toLocaleString()}</span></p></div>
+        <span className={`shrink-0 rounded-full px-3 py-1.5 text-xs font-semibold ${complete ? 'bg-emerald-100 text-emerald-800' : 'bg-stone-100 text-stone-600'}`}>
+          {complete ? <><Check size={13} className="mr-1 inline" aria-hidden="true" /> Goal reached</> : `${Math.round(progress)}%`}
+        </span>
       </div>
-
-      {/* Bottom Counter & Action */}
-      <div className="flex items-end justify-between pt-6 mt-6 border-t border-emerald-500/10">
-        <div>
-          <span className="text-[11px] uppercase tracking-widest text-slate-400 block mb-1 font-medium">
-            Total Count
-          </span>
-          <span className="text-4xl font-black text-white group-hover:text-emerald-200 transition font-mono">
-            {item.count.toLocaleString()}
-          </span>
-        </div>
-
-        <div className="flex items-center gap-2 px-4 py-2 rounded-2xl bg-emerald-500/10 group-hover:bg-emerald-400 text-emerald-400 group-hover:text-slate-950 font-bold text-xs transition-all duration-300 border border-emerald-500/20 group-hover:border-emerald-400">
-          <span>Start Reciting</span>
-          <ChevronRight size={16} className="group-hover:translate-x-0.5 transition-transform" />
-        </div>
+      <div className="mt-4 h-2.5 overflow-hidden rounded-full bg-stone-100" role="progressbar" aria-label={`${item.title} goal progress`} aria-valuemin={0} aria-valuemax={goal} aria-valuenow={Math.min(count, goal)}>
+        <div className="h-full rounded-full bg-emerald-700 transition-all duration-500" style={{ width: `${progress}%` }} />
       </div>
-    </div>
+      <footer className="mt-5 flex items-center justify-between gap-3 border-t border-stone-100 pt-4">
+        <span className="flex items-center gap-1.5 text-xs text-stone-500 sm:text-sm"><Target size={15} aria-hidden="true" /> Daily intention</span>
+        <button type="button" onClick={() => onSelect(item.id)} className="inline-flex items-center gap-1.5 rounded-lg px-3 py-2 text-sm font-semibold text-emerald-800 transition hover:bg-emerald-50 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-emerald-700 group-hover:gap-2">Continue <ArrowUpRight size={15} aria-hidden="true" /></button>
+      </footer>
+    </article>
   );
 }

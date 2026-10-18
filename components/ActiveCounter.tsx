@@ -1,109 +1,78 @@
 'use client';
-import React, { useEffect, useCallback, useState } from 'react';
-import { TasbeehItem } from '@/types/tasbeeh';
-import { ArrowLeft, RotateCcw, Plus, Sparkles, Hand } from 'lucide-react';
+
+import { useCallback, useEffect, useRef, useState } from 'react';
+import type { TasbeehItem } from '@/types/tasbeeh';
+import { ArrowLeft, RotateCcw, Plus, Hand, Target, Moon, Sun } from 'lucide-react';
 
 interface ActiveCounterProps {
   tasbeeh: TasbeehItem;
-  onUpdateCount: (id: string, newCount: number) => void;
+  theme: 'light' | 'dark';
+  onToggleTheme: () => void;
+  onUpdateCount: (id: string, count: number) => void;
   onReset: (id: string) => void;
   onBack: () => void;
 }
 
-export default function ActiveCounter({ tasbeeh, onUpdateCount, onReset, onBack }: ActiveCounterProps) {
+export default function ActiveCounter({ tasbeeh, theme, onToggleTheme, onUpdateCount, onReset, onBack }: ActiveCounterProps) {
   const [isAnimating, setIsAnimating] = useState(false);
+  const animationTimeout = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const goal = Math.max(1, tasbeeh.goal ?? 100);
+  const count = Math.max(0, tasbeeh.count);
+  const progress = Math.min((count / goal) * 100, 100);
+  const complete = count >= goal;
 
   const handleIncrement = useCallback(() => {
-    onUpdateCount(tasbeeh.id, tasbeeh.count + 1);
+    onUpdateCount(tasbeeh.id, count + 1);
     setIsAnimating(true);
-    setTimeout(() => setIsAnimating(false), 150);
-  }, [tasbeeh, onUpdateCount]);
+    if (animationTimeout.current) clearTimeout(animationTimeout.current);
+    animationTimeout.current = setTimeout(() => setIsAnimating(false), 150);
+  }, [count, onUpdateCount, tasbeeh.id]);
 
-  // Listen for Enter key press
   useEffect(() => {
-    const handleKeyDown = (e: KeyboardEvent) => {
-      if (e.key === 'Enter') {
-        e.preventDefault();
-        handleIncrement();
-      }
+    const handler = (event: KeyboardEvent) => {
+      const target = event.target;
+      if (!(target instanceof HTMLElement)) return;
+      const isTyping = target.isContentEditable || ['INPUT', 'TEXTAREA', 'SELECT'].includes(target.tagName);
+      if (isTyping || event.altKey || event.ctrlKey || event.metaKey || event.repeat) return;
+      if (event.key !== 'Enter') return;
+      if (target.closest('button, a, [role="button"]')) return;
+      event.preventDefault();
+      handleIncrement();
     };
-    window.addEventListener('keydown', handleKeyDown);
-    return () => window.removeEventListener('keydown', handleKeyDown);
+    window.addEventListener('keydown', handler);
+    return () => window.removeEventListener('keydown', handler);
   }, [handleIncrement]);
 
+  useEffect(() => () => {
+    if (animationTimeout.current) clearTimeout(animationTimeout.current);
+  }, []);
+
   return (
-    <div className="min-h-screen bg-slate-950 text-white flex flex-col justify-between p-6 md:p-12 select-none relative overflow-hidden">
-      {/* Background Radial Glow Effects */}
-      <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[500px] h-[500px] bg-emerald-500/10 rounded-full blur-[140px] pointer-events-none" />
-
-      {/* Top Navigation */}
-      <div className="relative z-10 flex items-center justify-between max-w-3xl mx-auto w-full">
-        <button
-          onClick={onBack}
-          className="flex items-center gap-2 px-4 py-2.5 rounded-2xl bg-slate-900/80 hover:bg-slate-800 transition backdrop-blur-md text-emerald-300 border border-emerald-500/30 shadow-lg shadow-emerald-950/20"
-        >
-          <ArrowLeft size={18} />
-          <span className="font-semibold text-sm">Dashboard</span>
-        </button>
-
-        <div className="flex items-center gap-2 px-4 py-2 rounded-full bg-emerald-500/10 text-emerald-400 font-medium text-xs sm:text-sm border border-emerald-500/20 backdrop-blur-md">
-          <Sparkles size={16} />
-          <span>Active Recitation Session</span>
-        </div>
-      </div>
-
-      {/* Center Counter Display */}
-      <div className="relative z-10 flex flex-col items-center justify-center my-auto text-center py-6">
-        <h1 className="text-2xl sm:text-4xl md:text-5xl font-black tracking-tight mb-3 text-emerald-100 max-w-xl leading-tight">
-          {tasbeeh.title}
-        </h1>
-        <p className="text-slate-400 text-xs sm:text-sm mb-10 flex items-center gap-1.5 bg-slate-900/60 px-4 py-2 rounded-full border border-slate-800">
-          <span>Press</span>
-          <kbd className="px-2 py-0.5 bg-emerald-500/20 rounded border border-emerald-500/40 text-emerald-200 font-mono text-xs font-bold">
-            Enter
-          </kbd>
-          <span>on keyboard or tap the orb below</span>
-        </p>
-
-        {/* Big Interactive Clickable Counter Orb */}
-        <div
-          onClick={handleIncrement}
-          className={`relative group cursor-pointer w-64 h-64 sm:w-72 sm:h-72 md:w-80 md:h-80 rounded-full bg-gradient-to-tr from-emerald-600 via-teal-500 to-emerald-400 p-1.5 shadow-2xl shadow-emerald-900/50 hover:shadow-emerald-500/20 transition-all duration-200 flex items-center justify-center border-4 border-emerald-400/30 ${
-            isAnimating ? 'scale-95' : 'hover:scale-[1.02]'
-          }`}
-        >
-          <div className="w-full h-full rounded-full bg-slate-950/95 backdrop-blur-2xl flex flex-col items-center justify-center border border-emerald-500/30 relative overflow-hidden">
-            {/* Subtle inner ring highlight */}
-            <div className="absolute inset-4 rounded-full border border-emerald-500/10 pointer-events-none" />
-            
-            <Hand size={24} className="text-emerald-400/60 mb-2 animate-bounce" />
-            <span className="text-6xl sm:text-7xl md:text-8xl font-black tracking-tighter text-transparent bg-clip-text bg-gradient-to-b from-white via-emerald-100 to-emerald-400 font-mono">
-              {tasbeeh.count.toLocaleString()}
-            </span>
-            <span className="text-[11px] uppercase tracking-widest text-emerald-400/80 mt-2 font-extrabold">
-              Tap To Count
-            </span>
+    <main className="min-h-screen select-none bg-[#f7f8f3] px-5 py-6 text-stone-900 sm:px-8 sm:py-8">
+      <div className="mx-auto flex min-h-[calc(100vh-3rem)] max-w-3xl flex-col">
+        <header className="flex items-center justify-between gap-4">
+          <button type="button" onClick={onBack} className="inline-flex items-center gap-2 rounded-xl border border-stone-200 bg-white px-4 py-2.5 text-sm font-semibold text-stone-700 shadow-sm transition hover:border-emerald-300 hover:text-emerald-800 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-emerald-700"><ArrowLeft size={17} aria-hidden="true" /> Dashboard</button>
+          <div className="flex items-center gap-3"><span className="hidden items-center gap-2 text-xs font-semibold uppercase tracking-wider text-emerald-800 sm:flex"><span aria-hidden="true" className="h-2 w-2 rounded-full bg-emerald-500" /> Recitation session</span><button type="button" onClick={onToggleTheme} aria-label={`Switch to ${theme === 'light' ? 'dark' : 'light'} mode`} aria-pressed={theme === 'dark'} className="rounded-xl border border-stone-200 bg-white p-2.5 text-stone-700 shadow-sm transition hover:border-emerald-300 hover:text-emerald-800 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-emerald-700">{theme === 'light' ? <Moon size={17} aria-hidden="true" /> : <Sun size={17} aria-hidden="true" />}</button></div>
+        </header>
+        <section className="my-auto flex flex-col items-center py-12 text-center">
+          <p className="mb-3 text-xs font-semibold uppercase tracking-[.2em] text-emerald-800">A moment of remembrance</p>
+          <h1 className="max-w-xl break-words text-3xl font-semibold tracking-tight sm:text-4xl">{tasbeeh.title}</h1>
+          <div className="mt-8 w-full max-w-md rounded-2xl border border-stone-200 bg-white px-5 py-4 text-left shadow-sm">
+            <div className="flex items-end justify-between gap-3"><div><p className="flex items-center gap-1.5 text-xs font-medium text-stone-500"><Target size={14} aria-hidden="true" /> Today&apos;s goal</p><p className="mt-1 text-sm font-semibold text-stone-800">{count.toLocaleString()} <span className="font-normal text-stone-400">of {goal.toLocaleString()}</span></p></div><span className="text-sm font-semibold text-emerald-800">{complete ? 'Complete' : `${Math.round(progress)}%`}</span></div>
+            <div className="mt-3 h-2.5 overflow-hidden rounded-full bg-stone-100" role="progressbar" aria-label={`${tasbeeh.title} goal progress`} aria-valuemin={0} aria-valuemax={goal} aria-valuenow={Math.min(count, goal)}><div className="h-full rounded-full bg-emerald-600 transition-all duration-300" style={{ width: `${progress}%` }} /></div>
+            <p className="mt-2 text-xs text-stone-500" aria-live="polite">{complete ? 'Beautiful work. Your intention is complete.' : `${(goal - count).toLocaleString()} repetitions to reach your intention`}</p>
           </div>
-        </div>
+          <button type="button" onClick={handleIncrement} aria-label="Add one recitation" className={`group relative mt-8 grid h-64 w-64 place-items-center rounded-full border-[10px] border-white bg-[#153c30] text-white shadow-[0_18px_60px_-18px_rgba(21,60,48,.42)] ring-1 ring-emerald-900/10 transition duration-150 hover:shadow-[0_22px_70px_-18px_rgba(21,60,48,.5)] focus-visible:outline-4 focus-visible:outline-offset-4 focus-visible:outline-emerald-700 active:scale-[.97] motion-reduce:transition-none sm:h-72 sm:w-72 ${isAnimating ? 'scale-[.97]' : 'hover:scale-[1.015]'}`}>
+            <span aria-hidden="true" className="pointer-events-none absolute inset-3 rounded-full border border-white/15" />
+            <span aria-live="polite" aria-atomic="true" className="flex flex-col items-center"><Hand size={20} aria-hidden="true" className="mb-3 text-emerald-200/80 transition group-hover:-translate-y-1" /><span className="text-6xl font-semibold tabular-nums tracking-tight sm:text-7xl">{count.toLocaleString()}</span><span className="mt-2 text-[10px] font-semibold uppercase tracking-[.22em] text-emerald-100/75">Tap to count</span></span>
+          </button>
+          <p className="mt-5 text-xs text-stone-400">Tap the circle or press <kbd className="rounded-md border border-stone-200 bg-white px-1.5 py-0.5 font-mono text-stone-600">Enter</kbd></p>
+        </section>
+        <footer className="flex items-center justify-center gap-3">
+          <button type="button" onClick={() => onReset(tasbeeh.id)} disabled={count === 0} className="inline-flex items-center gap-2 rounded-xl border border-stone-200 bg-white px-4 py-3 text-sm font-semibold text-stone-600 transition hover:border-rose-200 hover:text-rose-700 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-rose-700 disabled:cursor-not-allowed disabled:opacity-50"><RotateCcw size={16} aria-hidden="true" /> Reset</button>
+          <button type="button" onClick={handleIncrement} className="inline-flex items-center gap-2 rounded-xl bg-emerald-800 px-6 py-3 text-sm font-semibold text-white shadow-sm transition hover:bg-emerald-700 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-emerald-700 active:scale-[.98]"><Plus size={17} aria-hidden="true" /> Count</button>
+        </footer>
       </div>
-
-      {/* Bottom Action Controls */}
-      <div className="relative z-10 flex items-center justify-center gap-4 max-w-md mx-auto w-full pt-2">
-        <button
-          onClick={() => onReset(tasbeeh.id)}
-          className="flex items-center justify-center gap-2 px-5 py-3.5 rounded-2xl bg-rose-500/10 hover:bg-rose-500/20 border border-rose-500/30 text-rose-300 transition font-semibold backdrop-blur-md text-sm"
-        >
-          <RotateCcw size={16} />
-          <span>Reset Count</span>
-        </button>
-        <button
-          onClick={handleIncrement}
-          className="flex-1 flex items-center justify-center gap-2 px-6 py-3.5 rounded-2xl bg-gradient-to-r from-emerald-500 via-teal-400 to-emerald-400 hover:from-emerald-400 hover:to-teal-300 text-slate-950 font-extrabold transition shadow-xl shadow-emerald-500/20 text-sm active:scale-95"
-        >
-          <Plus size={18} />
-          <span>Count (+1)</span>
-        </button>
-      </div>
-    </div>
+    </main>
   );
 }

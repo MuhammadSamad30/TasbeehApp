@@ -1,9 +1,6 @@
 @import "tailwindcss";
 
-:root {
-  --background: #ffffff;
-  --foreground: #171717;
-}
+:root { --background: #f7f8f3; --foreground: #1c2420; }
 
 @theme inline {
   --color-background: var(--background);
@@ -12,15 +9,53 @@
   --font-mono: var(--font-geist-mono);
 }
 
-@media (prefers-color-scheme: dark) {
-  :root {
-    --background: #0a0a0a;
-    --foreground: #ededed;
-  }
-}
+* { box-sizing: border-box; }
+html { min-height: 100%; background: var(--background); }
+body { min-height: 100vh; background: var(--background); color: var(--foreground); font-family: Arial, Helvetica, sans-serif; }
+button, input { font: inherit; }
+button { cursor: pointer; }
+::selection { background: #bbdbc9; color: #153c30; }
 
-body {
-  background: var(--background);
-  color: var(--foreground);
-  font-family: Arial, Helvetica, sans-serif;
+html[data-theme="dark"] { color-scheme: dark; --background: #0c1512; --foreground: #eff6f0; }
+html[data-theme="dark"] body { background: #0c1512; color: #eff6f0; }
+html[data-theme="dark"] main { background: radial-gradient(ellipse at 50% -18%, #1c382b 0, #111f19 38rem, #0c1512 78rem) !important; color: #eff6f0 !important; }
+html[data-theme="dark"] main > header,
+html[data-theme="dark"] main > div > header { background-color: rgb(16 29 23 / 88%) !important; border-color: #294036 !important; }
+html[data-theme="dark"] main article,
+html[data-theme="dark"] main [role="dialog"],
+html[data-theme="dark"] main [role="alertdialog"],
+html[data-theme="dark"] main > div > section > div.rounded-2xl,
+html[data-theme="dark"] main [class*="border-dashed"] { background: linear-gradient(145deg, #1a2b22, #14231c) !important; border-color: #31483a !important; }
+html[data-theme="dark"] main article { box-shadow: 0 18px 50px -32px rgb(0 0 0 / 85%), inset 0 1px rgb(255 255 255 / 3%); }
+html[data-theme="dark"] main article:hover { border-color: #577d63 !important; }
+html[data-theme="dark"] main input,
+html[data-theme="dark"] main button.bg-white,
+html[data-theme="dark"] main header button,
+html[data-theme="dark"] main [class*="bg-white"] { background-color: #1b2b23 !important; border-color: #3b5144 !important; }
+html[data-theme="dark"] main input { color: #eff6f0 !important; }
+html[data-theme="dark"] main input::placeholder { color: #809287 !important; }
+html[data-theme="dark"] main [role="progressbar"] { background-color: #2a3c31 !important; }
+html[data-theme="dark"] main [class*="border-stone-"] { border-color: #31463a !important; }
+html[data-theme="dark"] main [class*="text-stone-900"],
+html[data-theme="dark"] main [class*="text-stone-800"],
+html[data-theme="dark"] main [class*="text-stone-700"] { color: #edf5ef !important; }
+html[data-theme="dark"] main [class*="text-stone-600"],
+html[data-theme="dark"] main [class*="text-stone-500"] { color: #b2c3b7 !important; }
+html[data-theme="dark"] main [class*="text-stone-400"] { color: #8da194 !important; }
+html[data-theme="dark"] main [class*="text-emerald-800"],
+html[data-theme="dark"] main [class*="text-emerald-700"] { color: #a7dfba !important; }
+html[data-theme="dark"] main [class*="bg-stone-100"] { background-color: #293b30 !important; }
+html[data-theme="dark"] main [class*="bg-emerald-50"] { background-color: #203b2b !important; }
+html[data-theme="dark"] main [class*="bg-emerald-100"] { background-color: #234631 !important; }
+html[data-theme="dark"] main [class*="text-emerald-800"] { color: #a7dfba !important; }
+html[data-theme="dark"] main button[class*="bg-[#e7c77c]"] { color: #17241b !important; }
+html[data-theme="dark"] main button:not([class*="bg-emerald-"]):not([class*="bg-rose-"]):not([class*="bg-[#e7c77c]"]) { color: #dce9df; }
+html[data-theme="dark"] main > div > section:nth-of-type(2) > div[class*="border-dashed"] { background: linear-gradient(145deg, #1a2b22, #14231c) !important; border-color: #3b5144 !important; }
+html[data-theme="dark"] kbd { background-color: #1b2b23 !important; border-color: #3b5144 !important; color: #d9e4dc !important; }
+html[data-theme="dark"] main > #home > section:first-child { background: radial-gradient(ellipse at 78% 10%, #28573e 0, transparent 34%), linear-gradient(125deg, #10281d, #194631 65%, #163c2d) !important; box-shadow: 0 24px 80px -44px rgb(89 179 119 / 50%); }
+html[data-theme="dark"] main button,
+html[data-theme="dark"] main article,
+html[data-theme="dark"] main input { transition: background-color 180ms ease, border-color 180ms ease, color 180ms ease, box-shadow 180ms ease; }
+@media (prefers-reduced-motion: reduce) {
+  html[data-theme="dark"] { transition: none; }
 }

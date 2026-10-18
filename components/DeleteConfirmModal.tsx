@@ -1,6 +1,7 @@
 'use client';
-import React from 'react';
-import { Trash2, AlertTriangle, X } from 'lucide-react';
+
+import { useEffect, useRef } from 'react';
+import { AlertTriangle, Trash2, X } from 'lucide-react';
 
 interface DeleteConfirmModalProps {
   isOpen: boolean;
@@ -9,60 +10,50 @@ interface DeleteConfirmModalProps {
   onConfirm: () => void;
 }
 
-export default function DeleteConfirmModal({
-  isOpen,
-  itemTitle,
-  onClose,
-  onConfirm,
-}: DeleteConfirmModalProps) {
+export default function DeleteConfirmModal({ isOpen, itemTitle, onClose, onConfirm }: DeleteConfirmModalProps) {
+  const dialogRef = useRef<HTMLElement>(null);
+  const previousFocus = useRef<HTMLElement | null>(null);
+
+  useEffect(() => {
+    if (!isOpen) return;
+    previousFocus.current = document.activeElement instanceof HTMLElement ? document.activeElement : null;
+    dialogRef.current?.focus();
+
+    const handleKey = (event: KeyboardEvent) => {
+      if (event.key === 'Escape') {
+        event.preventDefault();
+        onClose();
+      }
+      if (event.key !== 'Tab') return;
+      const controls = dialogRef.current?.querySelectorAll<HTMLElement>('button:not([disabled])') ?? [];
+      if (!controls.length) return;
+      const first = controls[0];
+      const last = controls[controls.length - 1];
+      if (event.shiftKey && document.activeElement === first) {
+        event.preventDefault();
+        last.focus();
+      } else if (!event.shiftKey && document.activeElement === last) {
+        event.preventDefault();
+        first.focus();
+      }
+    };
+
+    window.addEventListener('keydown', handleKey);
+    return () => {
+      window.removeEventListener('keydown', handleKey);
+      previousFocus.current?.focus();
+    };
+  }, [isOpen, onClose]);
+
   if (!isOpen) return null;
 
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-950/80 backdrop-blur-md animate-in fade-in duration-200">
-      <div className="bg-slate-900 border border-rose-500/30 rounded-3xl w-full max-w-md p-6 shadow-2xl shadow-rose-950/30 relative overflow-hidden">
-        {/* Glow effect */}
-        <div className="absolute -top-12 -right-12 w-32 h-32 bg-rose-500/10 rounded-full blur-2xl pointer-events-none" />
-
-        <div className="flex items-center justify-between mb-4">
-          <div className="flex items-center gap-3">
-            <div className="p-3 rounded-2xl bg-rose-500/10 border border-rose-500/20 text-rose-400">
-              <AlertTriangle size={22} />
-            </div>
-            <div>
-              <h3 className="text-lg font-bold text-slate-100">Delete Tasbeeh?</h3>
-              <p className="text-xs text-slate-400">This action cannot be undone</p>
-            </div>
-          </div>
-          <button
-            onClick={onClose}
-            className="text-slate-400 hover:text-white transition p-2 rounded-xl hover:bg-white/5"
-          >
-            <X size={18} />
-          </button>
-        </div>
-
-        <div className="my-5 p-4 rounded-2xl bg-slate-950/60 border border-slate-800 text-sm text-slate-300">
-          Are you sure you want to delete <span className="font-semibold text-rose-300">"{itemTitle}"</span> folder?
-        </div>
-
-        <div className="flex items-center justify-end gap-3 pt-2">
-          <button
-            type="button"
-            onClick={onClose}
-            className="px-5 py-2.5 rounded-xl bg-slate-800 hover:bg-slate-700 text-slate-300 font-medium transition text-sm"
-          >
-            Cancel
-          </button>
-          <button
-            type="button"
-            onClick={onConfirm}
-            className="flex items-center gap-2 px-5 py-2.5 rounded-xl bg-gradient-to-r from-rose-500 to-red-600 hover:from-rose-600 hover:to-red-700 text-white font-semibold transition shadow-lg shadow-rose-500/20 text-sm"
-          >
-            <Trash2 size={16} />
-            <span>Delete</span>
-          </button>
-        </div>
-      </div>
+    <div className="fixed inset-0 z-50 flex items-center justify-center bg-stone-950/35 p-4 backdrop-blur-sm" onMouseDown={(event) => { if (event.target === event.currentTarget) onClose(); }}>
+      <section ref={dialogRef} tabIndex={-1} role="alertdialog" aria-modal="true" aria-labelledby="delete-title" aria-describedby="delete-description" className="relative w-full max-w-md overflow-hidden rounded-[1.75rem] border border-stone-200 bg-[#fbfcf8] p-6 text-stone-900 shadow-[0_24px_80px_-24px_rgba(20,40,30,.38)] outline-none sm:p-7">
+        <div className="flex items-start justify-between gap-3"><div className="flex gap-3"><span aria-hidden="true" className="grid h-11 w-11 shrink-0 place-items-center rounded-2xl bg-rose-50 text-rose-700"><AlertTriangle size={20} /></span><div><h2 id="delete-title" className="text-xl font-semibold tracking-tight">Delete recitation?</h2><p className="mt-1 text-sm text-stone-500">This action can&apos;t be undone.</p></div></div><button type="button" onClick={onClose} aria-label="Close dialog" className="rounded-xl p-2 text-stone-400 transition hover:bg-stone-100 hover:text-stone-700 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-stone-700"><X size={18} aria-hidden="true" /></button></div>
+        <p id="delete-description" className="my-6 rounded-xl border border-stone-200 bg-white p-4 text-sm leading-6 text-stone-600">You&apos;re about to remove <span className="break-words font-semibold text-stone-900">{itemTitle}</span> and its saved count.</p>
+        <div className="flex flex-col-reverse gap-2 border-t border-stone-100 pt-5 sm:flex-row sm:justify-end"><button type="button" onClick={onClose} className="rounded-xl px-4 py-3 text-sm font-semibold text-stone-600 transition hover:bg-stone-100 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-stone-700">Keep recitation</button><button type="button" onClick={onConfirm} className="inline-flex items-center justify-center gap-2 rounded-xl bg-rose-700 px-5 py-3 text-sm font-semibold text-white transition hover:bg-rose-800 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-rose-700"><Trash2 size={16} aria-hidden="true" /> Delete</button></div>
+      </section>
     </div>
   );
 }

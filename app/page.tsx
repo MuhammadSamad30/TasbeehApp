@@ -6,152 +6,65 @@ import CreateTasbeehModal from '@/components/CreateTasbeehModal';
 import DeleteConfirmModal from '@/components/DeleteConfirmModal';
 import ActiveCounter from '@/components/ActiveCounter';
 import TasbeehCard from '@/components/TasbeehCard';
-import { Plus, BookOpen, Moon, Sparkles } from 'lucide-react';
+import { Plus, BookOpen, MoonStar, Sparkles, Sun, Moon } from 'lucide-react';
+
+type Theme = 'light' | 'dark';
+const THEME_STORAGE_KEY = 'noor-daily-theme';
 
 export default function Home() {
   const [tasbeehs, setTasbeehs] = useState<TasbeehItem[]>([]);
   const [activeId, setActiveId] = useState<string | null>(null);
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [isLoaded, setIsLoaded] = useState(false);
-
-  // Custom Delete Modal State
   const [deletingItem, setDeletingItem] = useState<TasbeehItem | null>(null);
+  const [theme, setTheme] = useState<Theme>('light');
 
   useEffect(() => {
-    const loaded = getStoredTasbeehs();
-    setTasbeehs(loaded);
+    setTasbeehs(getStoredTasbeehs());
+    const savedTheme = localStorage.getItem(THEME_STORAGE_KEY);
+    if (savedTheme === 'light' || savedTheme === 'dark') setTheme(savedTheme);
     setIsLoaded(true);
   }, []);
-
-  const handleCreate = (title: string) => {
-    const newItem: TasbeehItem = {
-      id: Date.now().toString(),
-      title,
-      count: 0,
-      createdAt: new Date().toISOString(),
-    };
-    const updated = [newItem, ...tasbeehs];
-    setTasbeehs(updated);
-    saveStoredTasbeehs(updated);
-    setActiveId(newItem.id);
+  useEffect(() => {
+    document.documentElement.dataset.theme = theme;
+    localStorage.setItem(THEME_STORAGE_KEY, theme);
+  }, [theme]);
+  const toggleTheme = () => setTheme((current) => current === 'light' ? 'dark' : 'light');
+  const persist = (updated: TasbeehItem[]) => { setTasbeehs(updated); saveStoredTasbeehs(updated); };
+  const handleCreate = (title: string, goal: number) => {
+    const newItem: TasbeehItem = { id: Date.now().toString(), title, count: 0, goal, createdAt: new Date().toISOString() };
+    persist([newItem, ...tasbeehs]); setActiveId(newItem.id);
   };
-
-  const handleUpdateCount = (id: string, newCount: number) => {
-    const updated = tasbeehs.map((item) => (item.id === id ? { ...item, count: newCount } : item));
-    setTasbeehs(updated);
-    saveStoredTasbeehs(updated);
-  };
-
-  const handleReset = (id: string) => {
-    const updated = tasbeehs.map((item) => (item.id === id ? { ...item, count: 0 } : item));
-    setTasbeehs(updated);
-    saveStoredTasbeehs(updated);
-  };
-
-  const handleDeleteRequest = (item: TasbeehItem, e: React.MouseEvent) => {
-    e.stopPropagation();
-    setDeletingItem(item);
-  };
-
+  const handleUpdateCount = (id: string, count: number) => persist(tasbeehs.map((item) => item.id === id ? { ...item, count } : item));
+  const handleReset = (id: string) => persist(tasbeehs.map((item) => item.id === id ? { ...item, count: 0 } : item));
+  const handleDeleteRequest = (item: TasbeehItem, e: React.MouseEvent) => { e.stopPropagation(); setDeletingItem(item); };
   const handleConfirmDelete = () => {
     if (!deletingItem) return;
-    const updated = tasbeehs.filter((item) => item.id !== deletingItem.id);
-    setTasbeehs(updated);
-    saveStoredTasbeehs(updated);
+    persist(tasbeehs.filter((item) => item.id !== deletingItem.id));
     if (activeId === deletingItem.id) setActiveId(null);
     setDeletingItem(null);
   };
 
-  if (!isLoaded) {
-    return (
-      <div className="min-h-screen bg-slate-950 flex flex-col items-center justify-center text-emerald-400 gap-3 font-medium">
-        <div className="w-8 h-8 border-2 border-emerald-400 border-t-transparent rounded-full animate-spin" />
-        <span>Loading Ibadat App...</span>
-      </div>
-    );
-  }
+  if (!isLoaded) return <main className="flex min-h-screen items-center justify-center bg-[#f7f8f3] text-emerald-800"><div className="animate-pulse">Preparing your quiet space…</div></main>;
+  const activeTasbeeh = tasbeehs.find((item) => item.id === activeId);
+  if (activeTasbeeh) return <ActiveCounter tasbeeh={activeTasbeeh} theme={theme} onToggleTheme={toggleTheme} onUpdateCount={handleUpdateCount} onReset={handleReset} onBack={() => setActiveId(null)} />;
 
-  const activeTasbeeh = tasbeehs.find((t) => t.id === activeId);
-  if (activeTasbeeh) {
-    return (
-      <ActiveCounter
-        tasbeeh={activeTasbeeh}
-        onUpdateCount={handleUpdateCount}
-        onReset={handleReset}
-        onBack={() => setActiveId(null)}
-      />
-    );
-  }
-
+  const totalCount = tasbeehs.reduce((sum, item) => sum + item.count, 0);
+  const completeCount = tasbeehs.filter((item) => item.count >= (item.goal ?? 100)).length;
   return (
-    <main className="min-h-screen bg-slate-950 text-white p-6 md:p-12 relative overflow-hidden">
-      {/* Glow Effects Background */}
-      <div className="absolute top-0 left-1/2 -translate-x-1/2 w-[600px] h-[300px] bg-emerald-500/10 rounded-full blur-[120px] pointer-events-none" />
-
-      <div className="max-w-5xl mx-auto relative z-10">
-        {/* Header */}
-        <div className="flex flex-col md:flex-row md:items-center justify-between gap-6 mb-10 pb-8 border-b border-emerald-500/15">
-          <div>
-            <div className="inline-flex items-center gap-2 px-3 sm py-1 rounded-full bg-emerald-500/10 border border-emerald-500/20 text-emerald-400 font-semibold text-xs mb-3">
-              <Moon size={14} />
-              <span>Digital Tasbeeh & Ibadat Counter</span>
-            </div>
-            <h1 className="text-3xl md:text-5xl font-black tracking-tight text-white">
-              Your Recitation Folders
-            </h1>
-          </div>
-          <button
-            onClick={() => setIsModalOpen(true)}
-            className="flex items-center justify-center gap-2 px-6 py-3.5 rounded-2xl bg-gradient-to-r from-emerald-500 via-teal-400 to-emerald-400 hover:from-emerald-400 hover:to-teal-300 text-slate-950 font-extrabold transition shadow-xl shadow-emerald-500/20 hover:scale-[1.02] active:scale-[0.98]"
-          >
-            <Plus size={20} />
-            <span>New Tasbeeh</span>
-          </button>
-        </div>
-
-        {/* Tasbeeh Cards Grid */}
-        {tasbeehs.length === 0 ? (
-          <div className="text-center py-24 bg-slate-900/40 rounded-3xl border border-dashed border-emerald-500/20 backdrop-blur-sm">
-            <div className="w-16 h-16 mx-auto mb-4 rounded-2xl bg-emerald-500/10 flex items-center justify-center text-emerald-400 border border-emerald-500/20">
-              <BookOpen size={32} />
-            </div>
-            <h3 className="text-xl font-bold text-white mb-2">No Recitations Found</h3>
-            <p className="text-slate-400 text-sm mb-6 max-w-sm mx-auto">
-              Create your first tasbeeh folder like Astaghfar or Durood to start counting.
-            </p>
-            <button
-              onClick={() => setIsModalOpen(true)}
-              className="px-6 py-3 rounded-2xl bg-emerald-500 text-slate-950 font-bold hover:bg-emerald-400 transition"
-            >
-              Add Tasbeeh Now
-            </button>
-          </div>
-        ) : (
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-5">
-            {tasbeehs.map((item) => (
-              <TasbeehCard
-                key={item.id}
-                item={item}
-                onSelect={setActiveId}
-                onDeleteRequest={handleDeleteRequest}
-              />
-            ))}
-          </div>
-        )}
-
-        {/* Modals */}
-        <CreateTasbeehModal
-          isOpen={isModalOpen}
-          onClose={() => setIsModalOpen(false)}
-          onCreate={handleCreate}
-        />
-
-        <DeleteConfirmModal
-          isOpen={!!deletingItem}
-          itemTitle={deletingItem?.title || ''}
-          onClose={() => setDeletingItem(null)}
-          onConfirm={handleConfirmDelete}
-        />
+    <main className="min-h-screen bg-[#f7f8f3] text-stone-900">
+      <header className="border-b border-stone-200/80 bg-[#fbfcf8]"><div className="mx-auto flex max-w-6xl items-center justify-between px-5 py-5 sm:px-8"><a href="#home" className="flex items-center gap-3"><span className="grid h-10 w-10 place-items-center rounded-2xl bg-emerald-800 text-white"><MoonStar size={20}/></span><span className="text-lg font-semibold tracking-tight">Noor<span className="text-emerald-700">.daily</span></span></a><div className="flex items-center gap-4"><span className="hidden items-center gap-2 text-sm text-stone-500 sm:flex"><span className="h-2 w-2 rounded-full bg-emerald-500"/> A little remembrance, every day</span><button type="button" onClick={toggleTheme} aria-label={`Switch to ${theme === 'light' ? 'dark' : 'light'} mode`} aria-pressed={theme === 'dark'} className="inline-flex items-center gap-2 rounded-xl border border-stone-200 bg-white px-3 py-2 text-sm font-semibold text-stone-700 shadow-sm transition hover:border-emerald-300 hover:text-emerald-800 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-emerald-700"><span className="grid h-5 w-5 place-items-center" aria-hidden="true">{theme === 'light' ? <Moon size={17}/> : <Sun size={17}/>}</span><span className="hidden sm:inline">{theme === 'light' ? 'Dark mode' : 'Light mode'}</span></button></div></div></header>
+      <div id="home" className="mx-auto max-w-6xl px-5 pb-16 pt-10 sm:px-8 sm:pt-14">
+        <section className="relative overflow-hidden rounded-[2rem] bg-[#153c30] px-7 py-9 text-white sm:px-11 sm:py-12">
+          <div className="pointer-events-none absolute -right-20 -top-28 h-80 w-80 rounded-full border border-white/10"/><div className="pointer-events-none absolute -right-4 -top-12 h-56 w-56 rounded-full border border-white/10"/>
+          <div className="relative max-w-xl"><p className="mb-4 flex items-center gap-2 text-sm font-medium text-emerald-200"><Sparkles size={16}/> YOUR PERSONAL PRACTICE</p><h1 className="text-3xl font-semibold leading-tight tracking-tight sm:text-5xl">Make space for what matters.</h1><p className="mt-4 max-w-lg text-sm leading-6 text-emerald-100/75 sm:text-base">Set a gentle intention, settle into your rhythm, and watch each recitation bring you closer to your goal.</p><button onClick={() => setIsModalOpen(true)} className="mt-7 inline-flex items-center gap-2 rounded-xl bg-[#e7c77c] px-5 py-3 text-sm font-semibold text-stone-900 shadow-sm transition hover:bg-[#f0d894]"><Plus size={18}/> Begin a recitation</button></div>
+          <div className="relative mt-10 grid max-w-lg grid-cols-3 gap-3 border-t border-white/15 pt-5 sm:absolute sm:bottom-10 sm:right-10 sm:mt-0 sm:w-[380px] sm:border-0 sm:pt-0"><div><p className="text-2xl font-semibold tabular-nums">{tasbeehs.length}</p><p className="mt-1 text-xs text-emerald-100/65">Practices</p></div><div><p className="text-2xl font-semibold tabular-nums">{totalCount.toLocaleString()}</p><p className="mt-1 text-xs text-emerald-100/65">Recitations</p></div><div><p className="text-2xl font-semibold tabular-nums">{completeCount}</p><p className="mt-1 text-xs text-emerald-100/65">Goals reached</p></div></div>
+        </section>
+        <section className="mt-10 sm:mt-12"><div className="mb-5 flex items-end justify-between gap-4"><div><p className="text-xs font-semibold uppercase tracking-[.18em] text-emerald-800">Your intentions</p><h2 className="mt-1 text-2xl font-semibold tracking-tight">Recitations</h2></div>{tasbeehs.length > 0 && <button onClick={() => setIsModalOpen(true)} className="inline-flex items-center gap-1.5 rounded-lg px-3 py-2 text-sm font-semibold text-emerald-800 transition hover:bg-emerald-50"><Plus size={16}/> Add new</button>}</div>
+          {tasbeehs.length === 0 ? <div className="rounded-3xl border border-dashed border-stone-300 bg-white/70 px-6 py-16 text-center"><span className="mx-auto grid h-14 w-14 place-items-center rounded-2xl bg-emerald-50 text-emerald-800"><BookOpen size={25}/></span><h3 className="mt-5 text-lg font-semibold">Start with an intention</h3><p className="mx-auto mt-2 max-w-sm text-sm leading-6 text-stone-500">Create a recitation, choose a goal that feels right, and begin whenever you’re ready.</p><button onClick={() => setIsModalOpen(true)} className="mt-5 rounded-xl bg-emerald-800 px-5 py-3 text-sm font-semibold text-white transition hover:bg-emerald-700">Create your first recitation</button></div> : <div className="grid gap-4 md:grid-cols-2">{tasbeehs.map((item) => <TasbeehCard key={item.id} item={item} onSelect={setActiveId} onDeleteRequest={handleDeleteRequest}/>)}</div>}
+        </section>
+        <footer className="mt-12 border-t border-stone-200 pt-5 text-center text-xs text-stone-400">A quiet moment, at your own pace.</footer>
+        <CreateTasbeehModal isOpen={isModalOpen} onClose={() => setIsModalOpen(false)} onCreate={handleCreate}/><DeleteConfirmModal isOpen={!!deletingItem} itemTitle={deletingItem?.title || ''} onClose={() => setDeletingItem(null)} onConfirm={handleConfirmDelete}/>
       </div>
     </main>
   );

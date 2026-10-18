@@ -7,7 +7,8 @@ export const getStoredTasbeehs = (): TasbeehItem[] => {
   try {
     const data = localStorage.getItem(STORAGE_KEY);
     if (data) {
-      return JSON.parse(data);
+      const items: TasbeehItem[] = JSON.parse(data);
+      return items.map((item) => ({ ...item, goal: item.goal ?? 100 }));
     }
     // Default initial items if storage is empty
     const defaultItems: TasbeehItem[] = [
