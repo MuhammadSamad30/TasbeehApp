@@ -1,7 +1,7 @@
 'use client';
 
 import { useEffect, useRef, useState } from 'react';
-import type { FormEvent, KeyboardEvent } from 'react';
+import type { FormEvent, KeyboardEvent as ReactKeyboardEvent } from 'react';
 import { Plus, Sparkles, Target, X } from 'lucide-react';
 
 interface CreateTasbeehModalProps {
@@ -24,7 +24,7 @@ export default function CreateTasbeehModal({ isOpen, onClose, onCreate }: Create
     previousFocus.current = document.activeElement instanceof HTMLElement ? document.activeElement : null;
     titleInput.current?.focus();
 
-    const handleKey = (event: KeyboardEvent) => {
+    const handleKey = (event: globalThis.KeyboardEvent) => {
       if (event.key === 'Escape') {
         event.preventDefault();
         onClose();
@@ -62,7 +62,7 @@ export default function CreateTasbeehModal({ isOpen, onClose, onCreate }: Create
     onClose();
   };
 
-  const handleGoalKeyDown = (event: KeyboardEvent<HTMLInputElement>) => {
+  const handleGoalKeyDown = (event: ReactKeyboardEvent<HTMLInputElement>) => {
     if (['e', 'E', '+', '-', '.'].includes(event.key)) event.preventDefault();
   };
 
