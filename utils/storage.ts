@@ -7,8 +7,34 @@ export const getStoredTasbeehs = (): TasbeehItem[] => {
   try {
     const data = localStorage.getItem(STORAGE_KEY);
     if (data) {
-      const items: TasbeehItem[] = JSON.parse(data);
-      return items.map((item) => ({ ...item, goal: item.goal ?? 100 }));
+      const parsed: unknown = JSON.parse(data);
+      if (!Array.isArray(parsed)) return [];
+
+      return parsed.flatMap((value): TasbeehItem[] => {
+        if (!value || typeof value !== 'object') return [];
+
+        const item = value as Record<string, unknown>;
+        if (
+          typeof item.id !== 'string' || !item.id ||
+          typeof item.title !== 'string' || !item.title.trim() ||
+          typeof item.count !== 'number' || !Number.isSafeInteger(item.count) || item.count < 0
+        ) return [];
+
+        const goal = typeof item.goal === 'number' && Number.isSafeInteger(item.goal) && item.goal > 0
+          ? item.goal
+          : 100;
+        const createdAt = typeof item.createdAt === 'string' && !Number.isNaN(Date.parse(item.createdAt))
+          ? item.createdAt
+          : new Date(0).toISOString();
+
+        return [{
+          id: item.id,
+          title: item.title,
+          count: item.count,
+          goal,
+          createdAt,
+        }];
+      });
     }
     // Default initial items if storage is empty
     const defaultItems: TasbeehItem[] = [
