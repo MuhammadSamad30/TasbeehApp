@@ -13,7 +13,7 @@ const geistMono = Geist_Mono({
 });
 
 export const metadata: Metadata = {
-  title: "Noor.daily — Your Recitation Practice",
+  title: "Imaan — Your Recitation Practice",
   description: "A calm space to set recitation goals and keep track of your daily remembrance.",
 };
 
