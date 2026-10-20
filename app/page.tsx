@@ -1,5 +1,6 @@
 'use client';
 import React, { useState, useEffect } from 'react';
+import Link from 'next/link';
 import { TasbeehItem } from '@/types/tasbeeh';
 import { getStoredTasbeehs, saveStoredTasbeehs } from '@/utils/storage';
 import CreateTasbeehModal from '@/components/CreateTasbeehModal';
@@ -20,6 +21,8 @@ export default function Home() {
   const [deletingItem, setDeletingItem] = useState<TasbeehItem | null>(null);
   const [theme, setTheme] = useState<Theme>('light');
 
+  // Hydrate browser-only saved settings after the initial render.
+  /* eslint-disable react-hooks/set-state-in-effect */
   useEffect(() => {
     const storedTasbeehs = getStoredTasbeehs();
     setTasbeehs(storedTasbeehs);
@@ -29,6 +32,7 @@ export default function Home() {
     if (savedActiveId && storedTasbeehs.some((item) => item.id === savedActiveId)) setActiveId(savedActiveId);
     setIsLoaded(true);
   }, []);
+  /* eslint-enable react-hooks/set-state-in-effect */
   useEffect(() => {
     document.documentElement.dataset.theme = theme;
     localStorage.setItem(THEME_STORAGE_KEY, theme);
@@ -65,7 +69,7 @@ export default function Home() {
   const completeCount = tasbeehs.filter((item) => item.count >= (item.goal ?? 100)).length;
   return (
     <main className="min-h-screen bg-[#f7f8f3] text-stone-900">
-      <header className="border-b border-stone-200/80 bg-[#fbfcf8]"><div className="mx-auto flex max-w-6xl items-center justify-between px-5 py-5 sm:px-8"><a href="#home" className="flex items-center gap-3"><span className="grid h-10 w-10 place-items-center rounded-2xl bg-emerald-800 text-white"><MoonStar size={20}/></span><span className="text-lg font-semibold tracking-tight">Imaan</span></a><div className="flex items-center gap-4"><span className="hidden items-center gap-2 text-sm text-stone-500 sm:flex"><span className="h-2 w-2 rounded-full bg-emerald-500"/> A little remembrance, every day</span><button type="button" onClick={toggleTheme} aria-label={`Switch to ${theme === 'light' ? 'dark' : 'light'} mode`} aria-pressed={theme === 'dark'} className="inline-flex items-center gap-2 rounded-xl border border-stone-200 bg-white px-3 py-2 text-sm font-semibold text-stone-700 shadow-sm transition hover:border-emerald-300 hover:text-emerald-800 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-emerald-700"><span className="grid h-5 w-5 place-items-center" aria-hidden="true">{theme === 'light' ? <Moon size={17}/> : <Sun size={17}/>}</span><span className="hidden sm:inline">{theme === 'light' ? 'Dark mode' : 'Light mode'}</span></button></div></div></header>
+      <header className="border-b border-stone-200/80 bg-[#fbfcf8]"><div className="mx-auto flex max-w-6xl items-center justify-between px-5 py-5 sm:px-8"><a href="#home" className="flex items-center gap-3"><span className="grid h-10 w-10 place-items-center rounded-2xl bg-emerald-800 text-white"><MoonStar size={20}/></span><span className="text-lg font-semibold tracking-tight">Imaan</span></a><div className="flex items-center gap-3"><Link href="/asma-ul-husna" className="inline-flex items-center gap-2 rounded-xl bg-emerald-800 px-3 py-2 text-sm font-semibold text-white shadow-sm transition hover:bg-emerald-700"><BookOpen size={16}/><span>Learn the 99 Names</span></Link><span className="hidden items-center gap-2 text-sm text-stone-500 lg:flex"><span className="h-2 w-2 rounded-full bg-emerald-500"/> A little remembrance, every day</span><button type="button" onClick={toggleTheme} aria-label={`Switch to ${theme === 'light' ? 'dark' : 'light'} mode`} aria-pressed={theme === 'dark'} className="inline-flex items-center gap-2 rounded-xl border border-stone-200 bg-white px-3 py-2 text-sm font-semibold text-stone-700 shadow-sm transition hover:border-emerald-300 hover:text-emerald-800 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-emerald-700"><span className="grid h-5 w-5 place-items-center" aria-hidden="true">{theme === 'light' ? <Moon size={17}/> : <Sun size={17}/>}</span><span className="hidden sm:inline">{theme === 'light' ? 'Dark mode' : 'Light mode'}</span></button></div></div></header>
       <div id="home" className="mx-auto max-w-6xl px-5 pb-16 pt-10 sm:px-8 sm:pt-14">
         <section className="relative overflow-hidden rounded-[2rem] bg-[#153c30] px-7 py-9 text-white sm:px-11 sm:py-12">
           <div className="pointer-events-none absolute -right-20 -top-28 h-80 w-80 rounded-full border border-white/10"/><div className="pointer-events-none absolute -right-4 -top-12 h-56 w-56 rounded-full border border-white/10"/>
