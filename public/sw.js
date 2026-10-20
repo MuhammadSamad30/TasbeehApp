@@ -1,9 +1,40 @@
 /* Bump these versions when changing the offline shell or cache behavior. */
 const CACHE_PREFIX = 'tasbeeh-pwa';
-const SHELL_CACHE = `${CACHE_PREFIX}-shell-v1`;
-const STATIC_CACHE = `${CACHE_PREFIX}-static-v1`;
+const SHELL_CACHE = `${CACHE_PREFIX}-shell-v2`;
+const STATIC_CACHE = `${CACHE_PREFIX}-static-v2`;
 const ROOT_URL = new URL('/', self.location.origin).href;
+const ASMA_URL = new URL('/asma-ul-husna', self.location.origin).href;
 const OFFLINE_URL = new URL('/offline.html', self.location.origin).href;
+
+async function cacheDocument(url, shellCache, staticCache) {
+  const response = await fetch(new Request(url, {
+    headers: { Accept: 'text/html' },
+    cache: 'reload',
+  }));
+  if (!response.ok || !response.headers.get('content-type')?.includes('text/html')) {
+    throw new Error(`The app shell could not be cached: ${url}`);
+  }
+
+  const html = await response.clone().text();
+  await shellCache.put(url, response);
+
+  const linkedAssets = new Set();
+  const assetPattern = /(?:src|href)=["']([^"']+)["']/g;
+  for (const match of html.matchAll(assetPattern)) {
+    try {
+      const assetUrl = new URL(match[1], url);
+      if (assetUrl.origin === self.location.origin && assetUrl.pathname.startsWith('/_next/static/')) {
+        linkedAssets.add(assetUrl.href);
+      }
+    } catch {
+      // Ignore malformed or non-URL attributes in generated HTML.
+    }
+  }
+  await Promise.allSettled([...linkedAssets].map(async (assetUrl) => {
+    const asset = await fetch(assetUrl, { cache: 'reload' });
+    if (asset.ok) await staticCache.put(assetUrl, asset);
+  }));
+}
 
 self.addEventListener('install', (event) => {
   event.waitUntil((async () => {
@@ -17,35 +48,11 @@ self.addEventListener('install', (event) => {
       '/icon-512x512.png',
     ]);
 
-    // Store a real Next.js HTML document, then its linked route chunks and CSS.
-    const response = await fetch(new Request(ROOT_URL, {
-      headers: { Accept: 'text/html' },
-      cache: 'reload',
-    }));
-    if (!response.ok || !response.headers.get('content-type')?.includes('text/html')) {
-      throw new Error('The app shell could not be cached.');
-    }
-
-    const html = await response.clone().text();
-    await shellCache.put(ROOT_URL, response);
-
-    const linkedAssets = new Set();
-    const assetPattern = /(?:src|href)=["']([^"']+)["']/g;
-    for (const match of html.matchAll(assetPattern)) {
-      try {
-        const assetUrl = new URL(match[1], ROOT_URL);
-        if (assetUrl.origin === self.location.origin && assetUrl.pathname.startsWith('/_next/static/')) {
-          linkedAssets.add(assetUrl.href);
-        }
-      } catch {
-        // Ignore malformed or non-URL attributes in generated HTML.
-      }
-    }
-
-    await Promise.allSettled([...linkedAssets].map(async (assetUrl) => {
-      const asset = await fetch(assetUrl, { cache: 'reload' });
-      if (asset.ok) await offlineCache.put(assetUrl, asset);
-    }));
+    // Precache both app pages and their route-specific scripts and styles.
+    await cacheDocument(ROOT_URL, shellCache, offlineCache);
+    await cacheDocument(ASMA_URL, shellCache, offlineCache);
+    const manifestResponse = await fetch('/manifest.webmanifest', { cache: 'reload' });
+    if (manifestResponse.ok) await offlineCache.put('/manifest.webmanifest', manifestResponse);
   })());
 });
 
@@ -87,7 +94,8 @@ self.addEventListener('fetch', (event) => {
         return response;
       } catch {
         const shellCache = await caches.open(SHELL_CACHE);
-        const cachedShell = await shellCache.match(requestUrl.href, { ignoreSearch: true, ignoreVary: true });
+        const cachedShell = await shellCache.match(requestUrl.href, { ignoreSearch: true, ignoreVary: true })
+          || await shellCache.match(`${requestUrl.origin}${requestUrl.pathname.replace(/\/$/, '') || '/'}`, { ignoreSearch: true, ignoreVary: true });
         if (cachedShell) return cachedShell;
 
         const staticCache = await caches.open(STATIC_CACHE);
@@ -110,7 +118,11 @@ self.addEventListener('fetch', (event) => {
     return;
   }
 
-  if (requestUrl.pathname === '/icon-192x192.png' || requestUrl.pathname === '/icon-512x512.png') {
+  if (
+    requestUrl.pathname === '/icon-192x192.png' ||
+    requestUrl.pathname === '/icon-512x512.png' ||
+    requestUrl.pathname === '/manifest.webmanifest'
+  ) {
     event.respondWith((async () => {
       const cache = await caches.open(STATIC_CACHE);
       const cached = await cache.match(request);

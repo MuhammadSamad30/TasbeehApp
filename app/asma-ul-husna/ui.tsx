@@ -1,17 +1,26 @@
 'use client';
+/* eslint-disable @next/next/no-html-link-for-pages -- Full document navigation lets the service worker serve cached routes offline. */
 
-import Link from 'next/link';
-import { ArrowLeft } from 'lucide-react';
+import { ArrowLeft, Moon, Sun } from 'lucide-react';
 import { names } from '@/data/asma-ul-husna';
+import { useTheme } from '@/components/ThemeProvider';
 import './asma.css';
 
 export default function AsmaExperience() {
+  const { theme, toggleTheme } = useTheme();
+
   return (
     <main className="asma-page simple-asma-page">
       <header className="asma-header">
         <div className="header-inner">
-          <Link href="/" className="brand-link"><span className="brand-mark">ن</span><span>Imaan</span></Link>
-          <Link href="/" className="back-link"><ArrowLeft size={16} /> Back to your practice</Link>
+          <a href="/" className="brand-link"><span className="brand-mark">ن</span><span>Imaan</span></a>
+          <div className="simple-asma-header-actions">
+            <button type="button" onClick={toggleTheme} aria-label={`Switch to ${theme === 'light' ? 'dark' : 'light'} mode`} aria-pressed={theme === 'dark'} className="simple-asma-theme-toggle">
+              {theme === 'light' ? <Moon size={17} aria-hidden="true" /> : <Sun size={17} aria-hidden="true" />}
+              <span>{theme === 'light' ? 'Dark mode' : 'Light mode'}</span>
+            </button>
+            <a href="/" className="back-link"><ArrowLeft size={16} /> Back to your practice</a>
+          </div>
         </div>
       </header>
       <div className="simple-asma-shell">

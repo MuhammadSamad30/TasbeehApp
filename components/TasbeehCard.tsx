@@ -1,6 +1,6 @@
 'use client';
 
-import { Check, ArrowUpRight, Target, Trash2 } from 'lucide-react';
+import { Check, ArrowUpRight, Target, Trash2, Pencil } from 'lucide-react';
 import type { MouseEvent } from 'react';
 import type { TasbeehItem } from '@/types/tasbeeh';
 
@@ -8,10 +8,11 @@ interface TasbeehCardProps {
   item: TasbeehItem;
   onSelect: (id: string) => void;
   onDeleteRequest: (item: TasbeehItem, event: MouseEvent<HTMLButtonElement>) => void;
+  onEditGoal: (item: TasbeehItem) => void;
 }
 
-export default function TasbeehCard({ item, onSelect, onDeleteRequest }: TasbeehCardProps) {
-  const goal = Math.max(1, item.goal ?? 100);
+export default function TasbeehCard({ item, onSelect, onDeleteRequest, onEditGoal }: TasbeehCardProps) {
+  const goal = Math.max(1, item.goal ?? 1000);
   const count = Math.max(0, item.count);
   const progress = Math.min((count / goal) * 100, 100);
   const complete = count >= goal;
@@ -22,9 +23,7 @@ export default function TasbeehCard({ item, onSelect, onDeleteRequest }: Tasbeeh
         <span className="inline-flex items-center gap-2 rounded-full bg-emerald-50 px-3 py-1.5 text-xs font-semibold text-emerald-800">
           <span aria-hidden="true" className="h-1.5 w-1.5 rounded-full bg-emerald-600" /> Recitation
         </span>
-        <button type="button" onClick={(event) => onDeleteRequest(item, event)} className="rounded-xl p-2 text-stone-400 transition hover:bg-rose-50 hover:text-rose-700 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-rose-700" title="Delete recitation" aria-label={`Delete ${item.title}`}>
-          <Trash2 size={17} aria-hidden="true" />
-        </button>
+        <div className="flex items-center gap-1"><button type="button" onClick={() => onEditGoal(item)} className="rounded-xl p-2 text-stone-400 transition hover:bg-emerald-50 hover:text-emerald-800 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-emerald-700" title="Edit goal" aria-label={`Edit goal for ${item.title}`}><Pencil size={16} aria-hidden="true" /></button><button type="button" onClick={(event) => onDeleteRequest(item, event)} className="rounded-xl p-2 text-stone-400 transition hover:bg-rose-50 hover:text-rose-700 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-rose-700" title="Delete recitation" aria-label={`Delete ${item.title}`}><Trash2 size={17} aria-hidden="true" /></button></div>
       </header>
       <h2 className="mt-5 break-words text-xl font-semibold tracking-tight text-stone-900">{item.title}</h2>
       <div className="mt-6 flex items-end justify-between gap-3">
